@@ -204,7 +204,7 @@ private:
     port_config_state_t m_portConfigState = PORT_CONFIG_MISSING;
     sai_uint32_t m_portCount;
     map<set<int>, sai_object_id_t> m_portListLaneMap;
-    map<set<int>, tuple<string, uint32_t, int, string, int>> m_lanesAliasSpeedMap;
+    map<set<int>, tuple<string, uint32_t, string, string, int>> m_lanesAliasSpeedMap;
     map<string, Port> m_portList;
     unordered_map<sai_object_id_t, int> m_portOidToIndex;
     map<string, uint32_t> m_port_ref_count;
@@ -247,7 +247,7 @@ private:
     bool setCollectionOnLagMember(Port &lagMember, bool enableCollection);
     bool setDistributionOnLagMember(Port &lagMember, bool enableDistribution);
 
-    bool addPort(const set<int> &lane_set, uint32_t speed, int an=0, string fec="");
+    bool addPort(const set<int> &lane_set, uint32_t speed, string an, string fec="");
     sai_status_t removePort(sai_object_id_t port_id);
     bool initPort(const string &alias, const int index, const set<int> &lane_set);
     void deInitPort(string alias, sai_object_id_t port_id);
@@ -279,7 +279,7 @@ private:
     bool m_isPriorityGroupMapGenerated = false;
     void generatePriorityGroupMapPerPort(const Port& port);
 
-    bool setPortAutoNeg(sai_object_id_t id, int an);
+    bool setPortAutoNeg(sai_object_id_t id, string an);
     bool setPortFecMode(sai_object_id_t id, int fec);
 
     bool getPortOperStatus(const Port& port, sai_port_oper_status_t& status) const;

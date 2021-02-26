@@ -1760,19 +1760,16 @@ bool PortsOrch::getQueueTypeAndIndex(sai_object_id_t queue_id, string &type, uin
     return true;
 }
 
-bool PortsOrch::setPortAutoNeg(sai_object_id_t id, int an)
+bool PortsOrch::setPortAutoNeg(sai_object_id_t id, string an)
 {
     SWSS_LOG_ENTER();
 
     sai_attribute_t attr;
     attr.id = SAI_PORT_ATTR_AUTO_NEG_MODE;
-    switch(an) {
-      case 1:
+    attr.value.booldata = false;
+
+    if (an == "on") {
         attr.value.booldata = true;
-        break;
-      default:
-        attr.value.booldata = false;
-        break;
     }
 
     sai_status_t status = sai_port_api->set_port_attribute(id, &attr);
@@ -1824,7 +1821,7 @@ void PortsOrch::updateDbPortOperStatus(const Port& port, sai_port_oper_status_t 
     m_portTable->set(port.m_alias, tuples);
 }
 
-bool PortsOrch::addPort(const set<int> &lane_set, uint32_t speed, int an, string fec_mode)
+bool PortsOrch::addPort(const set<int> &lane_set, uint32_t speed, string an, string fec_mode)
 {
     SWSS_LOG_ENTER();
 
@@ -1842,7 +1839,7 @@ bool PortsOrch::addPort(const set<int> &lane_set, uint32_t speed, int an, string
     attr.value.u32list.count = static_cast<uint32_t>(lanes.size());
     attrs.push_back(attr);
 
-    if (an == true)
+    if (an == "on")
     {
         attr.id = SAI_PORT_ATTR_AUTO_NEG_MODE;
         attr.value.booldata = true;
@@ -2172,7 +2169,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
             uint32_t mtu = 0;
             uint32_t speed = 0;
             string learn_mode;
-            int an = -1;
+            string an;
             int index = -1;
 
             for (auto i : kfvFieldsValues(t))
@@ -2228,7 +2225,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                 /* Set autoneg and ignore the port speed setting */
                 else if (fvField(i) == "autoneg")
                 {
-                    an = (int)stoul(fvValue(i));
+                    an = fvValue(i);
                 }
                 /* Set port serdes Pre-emphasis */
                 else if (fvField(i) == "preemphasis")
@@ -2386,12 +2383,12 @@ void PortsOrch::doPortTask(Consumer &consumer)
             }
             else
             {
-                if (an != -1 && an != p.m_autoneg)
+                if (!an.empty() && (p.m_autoneg != (an == "on")))
                 {
                     if (setPortAutoNeg(p.m_port_id, an))
                     {
-                        SWSS_LOG_NOTICE("Set port %s AutoNeg to %u", alias.c_str(), an);
-                        p.m_autoneg = an;
+                        SWSS_LOG_NOTICE("Set port %s AutoNeg to %s", alias.c_str(), an.c_str());
+                        p.m_autoneg = (an == "on");
                         m_portList[alias] = p;
 
                         // Once AN is changed
@@ -2412,7 +2409,7 @@ void PortsOrch::doPortTask(Consumer &consumer)
                     }
                     else
                     {
-                        SWSS_LOG_ERROR("Failed to set port %s AN to %u", alias.c_str(), an);
+                        SWSS_LOG_ERROR("Failed to set port %s AN to %s", alias.c_str(), an.c_str());
                         it++;
                         continue;
                     }
